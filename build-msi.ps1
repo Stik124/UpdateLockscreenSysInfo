@@ -34,9 +34,13 @@ if (!(Test-Path "files\install-script.ps1") -or
 
 Write-Host " Все файлы найдены" -ForegroundColor Green
 
+# Подставляем версию прямо в файл
+(Get-Content Product.wxs) `
+-replace 'VERSION_PLACEHOLDER', $Version |
+Set-Content Product.build.wxs
 
 Write-Host "Компиляция..." -ForegroundColor Yellow
-& $CANDLE -dVersion=$Version Product.wxs
+& $CANDLE Product.build.wxs
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host " Компиляция успешна" -ForegroundColor Green
@@ -44,7 +48,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Линковка..." -ForegroundColor Yellow
     
     # Для варианта с WixQuietExec нужен WixUtilExtension
-    & $LIGHT -ext WixUtilExtension -out "$OutputPath\UpdateLockScreen-$Version.msi" "Product.wixobj"
+    & $LIGHT -ext WixUtilExtension -out "$OutputPath\UpdateLockScreen-$Version.msi" "Product.build.wixobj"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host " MSI успешно собран!" -ForegroundColor Green
