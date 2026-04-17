@@ -1,9 +1,10 @@
 ﻿# build-msi.ps1
 param(
-    [string]$Version = "1.0.0.$env:GITHUB_RUN_NUMBER",
+    [string]$Version = "1.0.0." + $env:GITHUB_RUN_NUMBER,
     [string]$OutputPath = ".\Dist"
 )
 
+Write-Host "Version: $Version"
 Write-Host "Сборка MSI..." -ForegroundColor Green
 
 # Создаем выходную директорию
@@ -34,7 +35,7 @@ Write-Host " Все файлы найдены" -ForegroundColor Green
 
 
 Write-Host "Компиляция..." -ForegroundColor Yellow
-& $CANDLE -dVersion=$Version "Product.wxs"
+& $CANDLE Product.wxs
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host " Компиляция успешна" -ForegroundColor Green
