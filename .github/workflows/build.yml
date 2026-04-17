@@ -21,8 +21,10 @@ jobs:
       - name: 🏗 Build MSI
         run: powershell -ExecutionPolicy Bypass -File build-msi.ps1
 
-      - name: 📦 Upload MSI
-        uses: actions/upload-artifact@v4
+      - name: 📦 Upload MSI to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: msi
-          path: Dist/*.msi
+          files: Dist/*.msi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
