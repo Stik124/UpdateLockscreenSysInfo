@@ -1,4 +1,7 @@
 ﻿# uninstall-script.ps1 - Скрипт для удаления
+ 
+Start-Sleep -Seconds 2   # небольшая пауза
+
 $taskName = "UpdateLockScreen"
 $basePath = "C:\Program Files\UpdateLockScreen"
 $registryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP"
