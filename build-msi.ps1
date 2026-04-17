@@ -34,7 +34,7 @@ Write-Host " Все файлы найдены" -ForegroundColor Green
 
 
 Write-Host "Компиляция..." -ForegroundColor Yellow
-& $CANDLE "Product.wxs"
+& $CANDLE -dVersion=$Version "Product.wxs"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host " Компиляция успешна" -ForegroundColor Green
