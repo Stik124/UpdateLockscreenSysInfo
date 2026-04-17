@@ -26,18 +26,18 @@ Remove-Item "*.wixpdb" -ErrorAction SilentlyContinue
 if (!(Test-Path "files\install-script.ps1") -or 
     !(Test-Path "files\uninstall-script.ps1") -or 
     !(Test-Path "files\background.jpg")) {
-    Write-Error "❌ Файлы не найдены! Требуются: install-script.ps1, uninstall-script.ps1, background.jpg"
+    Write-Error " Файлы не найдены! Требуются: install-script.ps1, uninstall-script.ps1, background.jpg"
     exit 1
 }
 
-Write-Host "✅ Все файлы найдены" -ForegroundColor Green
+Write-Host " Все файлы найдены" -ForegroundColor Green
 
 
 Write-Host "Компиляция..." -ForegroundColor Yellow
 & $CANDLE "Product.wxs"
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Компиляция успешна" -ForegroundColor Green
+    Write-Host " Компиляция успешна" -ForegroundColor Green
     
     Write-Host "Линковка..." -ForegroundColor Yellow
     
@@ -45,14 +45,14 @@ if ($LASTEXITCODE -eq 0) {
     & $LIGHT -ext WixUtilExtension -out "$OutputPath\UpdateLockScreen-$Version.msi" "Product.wixobj"
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ MSI успешно собран!" -ForegroundColor Green
-        Write-Host "📦 Файл: $OutputPath\UpdateLockScreen-$Version.msi" -ForegroundColor Cyan
+        Write-Host " MSI успешно собран!" -ForegroundColor Green
+        Write-Host " Файл: $OutputPath\UpdateLockScreen-$Version.msi" -ForegroundColor Cyan
         
         # Очистка
         Remove-Item "*.wixobj" -ErrorAction SilentlyContinue
         Remove-Item "*.wixpdb" -ErrorAction SilentlyContinue
         
-        Write-Host "🎉 Готово! Custom Action будет выполнен при установке." -ForegroundColor Cyan
+        Write-Host " Готово! Custom Action будет выполнен при установке." -ForegroundColor Cyan
         
         # Информация
         $msiPath = "$OutputPath\UpdateLockScreen-$Version.msi"
@@ -62,9 +62,9 @@ if ($LASTEXITCODE -eq 0) {
         }
     }
     else {
-        Write-Error "❌ Ошибка линковки"
+        Write-Error " Ошибка линковки"
     }
 }
 else {
-    Write-Error "❌ Ошибка компиляции"
+    Write-Error " Ошибка компиляции"
 }
