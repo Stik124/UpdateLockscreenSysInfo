@@ -12,9 +12,11 @@ if (!(Test-Path $OutputPath)) {
 }
 
 # Пути к WiX
-$WIX_PATH = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
-$CANDLE = Join-Path $WIX_PATH "candle.exe"
-$LIGHT = Join-Path $WIX_PATH "light.exe"
+# $WIX_PATH = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+# $CANDLE = Join-Path $WIX_PATH "candle.exe"
+# $LIGHT = Join-Path $WIX_PATH "light.exe"
+$CANDLE = "candle.exe"
+$LIGHT = "light.exe
 
 Write-Host "Очистка..." -ForegroundColor Yellow
 Remove-Item "*.wixobj" -ErrorAction SilentlyContinue
