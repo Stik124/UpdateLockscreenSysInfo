@@ -6,7 +6,8 @@
              Language="1033"
              Version="VERSION_PLACEHOLDER"
              Manufacturer="Avdeev D.V."
-             UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
+             UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D"
+             Codepage="1251">
 
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
