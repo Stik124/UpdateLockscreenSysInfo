@@ -1,52 +1,56 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    
-    <Product Id="*" Name="UpdateLockScreen" Language="1033" 
-             Version="VERSION_PLACEHOLDER" Manufacturer="Avdeev D.V." 
-             UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
-        
-        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" 
-                 Platform="x64" />
-        
-        <MajorUpgrade
-                DowngradeErrorMessage="A newer version is already installed."
-                AllowDowngrades="no"
-                Schedule="afterInstallInitialize" />
-        <MediaTemplate EmbedCab="yes" />
+<Product Id="*" Name="UpdateLockScreen" Language="1033"
+         Version="VERSION_PLACEHOLDER"
+         Manufacturer="Avdeev D.V."
+         UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
 
-        <Feature Id="ProductFeature" Title="UpdateLockScreen" Level="1">
-            <ComponentRef Id="MainFiles" />
-        </Feature>
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
-        <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFiles64Folder">
-                <Directory Id="INSTALLFOLDER" Name="UpdateLockScreen">
-                    <Component Id="MainFiles" Guid="D4E5F6A7-B8C9-4D3E-8F1A-2B3C4D5E6F79" Win64="yes">
-                        <File Source="files\install-script.ps1" />
-                        <File Source="files\uninstall-script.ps1" />
-                        <File Source="files\background.jpg" />
-                    </Component>
-                </Directory>
+    <!-- 🔥 ОБНОВЛЕНИЕ -->
+    <MajorUpgrade DowngradeErrorMessage="Newer version is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="UpdateLockScreen" Level="1">
+        <ComponentRef Id="MainFiles" />
+    </Feature>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+        <Directory Id="ProgramFiles64Folder">
+            <Directory Id="INSTALLFOLDER" Name="UpdateLockScreen">
+                <Component Id="MainFiles" Guid="D4E5F6A7-B8C9-4D3E-8F1A-2B3C4D5E6F79" Win64="yes">
+                    <File Source="files\install-script.ps1" />
+                    <File Source="files\uninstall-script.ps1" />
+                    <File Source="files\background.jpg" />
+                </Component>
             </Directory>
         </Directory>
+    </Directory>
 
-        <CustomAction Id="RunInstallScript"
-                      Directory="INSTALLFOLDER"
-                      ExeCommand="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-script.ps1&quot;"
-                      Execute="deferred"
-                      Return="check"
-                      Impersonate="no" />
+    <!-- 🔥 НЕ БЛОКИРУЮЩИЙ запуск -->
+    <CustomAction Id="RunInstallScript"
+        Directory="INSTALLFOLDER"
+        ExeCommand='cmd.exe /c start "" /b powershell.exe -ExecutionPolicy Bypass -File install-script.ps1'
+        Execute="deferred"
+        Return="ignore"
+        Impersonate="no" />
 
-        <CustomAction Id="RunUninstallScript"
-                      Directory="INSTALLFOLDER"
-                      ExeCommand="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;uninstall-script.ps1&quot;"
-                      Execute="deferred"
-                      Return="check"
-                      Impersonate="no" />
+    <CustomAction Id="RunUninstallScript"
+        Directory="INSTALLFOLDER"
+        ExeCommand='cmd.exe /c start "" /b powershell.exe -ExecutionPolicy Bypass -File uninstall-script.ps1'
+        Execute="deferred"
+        Return="ignore"
+        Impersonate="no" />
 
-        <InstallExecuteSequence>
-            <Custom Action="RunInstallScript" After="InstallFiles">NOT Installed</Custom>
-            <Custom Action="RunUninstallScript" After="InstallInitialize">REMOVE="ALL"</Custom>
-        </InstallExecuteSequence>
-    </Product>
-</Wix>
+    <InstallExecuteSequence>
+        <!-- запуск после полной установки -->
+        <Custom Action="RunInstallScript" After="InstallFinalize">
+            NOT Installed OR UPGRADINGPRODUCTCODE
+        </Custom>
+
+        <!-- запуск при удалении -->
+        <Custom Action="RunUninstallScript" Before="RemoveFiles">
+            REMOVE="ALL"
+        </Custom>
+    </InstallExecuteSequence>
+
+</Product>
