@@ -1,4 +1,5 @@
 ﻿# build-msi.ps1
+#
 param(
     [string]$Version = "1.0.0." + $env:GITHUB_RUN_NUMBER,
     [string]$OutputPath = ".\Dist"
