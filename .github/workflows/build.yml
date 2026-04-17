@@ -25,7 +25,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
+          name: UpdateLockScreen v${{ github.run_number }}
           files: Dist/*.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
