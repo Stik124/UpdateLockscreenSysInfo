@@ -18,7 +18,7 @@ if (!(Test-Path $OutputPath)) {
 $CANDLE = "candle.exe"
 $LIGHT = "light.exe
 
-Write-Host "Очистка..." -ForegroundColor Yellow
+Write-Host "Cleaning..." -ForegroundColor Yellow
 Remove-Item "*.wixobj" -ErrorAction SilentlyContinue
 Remove-Item "*.wixpdb" -ErrorAction SilentlyContinue
 
@@ -66,5 +66,5 @@ if ($LASTEXITCODE -eq 0) {
     }
 }
 else {
-    Write-Error " Ошибка компиляции"
+    Write-Error " Compilation error"
 }
