@@ -45,12 +45,12 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
-            <!-- запуск после полной установки -->
-            <Custom Action="RunInstallScript" After="InstallFinalize">
+            <!-- Запуск скрипта установки сразу после копирования файлов, но до завершения транзакции -->
+            <Custom Action="RunInstallScript" After="InstallFiles">
                 NOT Installed OR UPGRADINGPRODUCTCODE
             </Custom>
 
-            <!-- запуск при удалении -->
+            <!-- Запуск скрипта удаления при полной деинсталляции -->
             <Custom Action="RunUninstallScript" Before="RemoveFiles">
                 REMOVE="ALL"
             </Custom>
