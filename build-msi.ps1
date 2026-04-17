@@ -16,7 +16,7 @@ if (!(Test-Path $OutputPath)) {
 # $CANDLE = Join-Path $WIX_PATH "candle.exe"
 # $LIGHT = Join-Path $WIX_PATH "light.exe"
 $CANDLE = "candle.exe"
-$LIGHT = "light.exe
+$LIGHT = "light.exe"
 
 Write-Host "Cleaning..." -ForegroundColor Yellow
 Remove-Item "*.wixobj" -ErrorAction SilentlyContinue
