@@ -11,6 +11,11 @@ $updateScript   = Join-Path $basePath "update-lockscreen.ps1"
 $vbsPath        = Join-Path $basePath "run-hidden-update-lockscreen.vbs"
 $taskName       = "UpdateLockScreen"
 
+# --- Удаляем старую задачу если есть ---
+if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+}
+
 
 # --- 1. Создаём папки ---
 New-Item -Path $lockscreenfinal -ItemType Directory -Force | Out-Null
@@ -385,9 +390,7 @@ $taskXml = @"
 </Task>
 "@
 
-if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
-    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
-}
+
 $tempXmlPath = Join-Path $env:TEMP "$taskName.xml"
 Set-Content -Path $tempXmlPath -Value $taskXml -Encoding Unicode
 schtasks /Create /TN $taskName /XML $tempXmlPath /F
