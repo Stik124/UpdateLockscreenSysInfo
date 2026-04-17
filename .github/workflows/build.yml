@@ -1,0 +1,28 @@
+name: Build MSI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧰 Install WiX
+        run: choco install wixtoolset -y
+
+      - name: ➕ Add WiX to PATH
+        run: echo "C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $env:GITHUB_PATH
+
+      - name: 🏗 Build MSI
+        run: powershell -ExecutionPolicy Bypass -File build-msi.ps1
+
+      - name: 📦 Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi
+          path: Dist/*.msi
