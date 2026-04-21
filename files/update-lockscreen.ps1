@@ -1,152 +1,243 @@
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
 
-$basePath       = "C:\Program Files\UpdateLockScreen"
-$background     = Join-Path $basePath "background.jpg"
-$finalFolder    = Join-Path $basePath "LockScreenFinal"
-$finalImage     = Join-Path $finalFolder "lockscreen.png"
+$basePath = "C:\Program Files\UpdateLockScreen"
+$backgroundImg = Join-Path $basePath "background.jpg"
+$lockscreenfinal = Join-Path $basePath "LockScreenFinal"
+$imageDest = Join-Path $lockscreenfinal "lockscreen.png"
+$logFile = Join-Path $basePath "update-lockscreen.log"
 
-# Создаём папку
-if (-not (Test-Path $finalFolder)) { New-Item -Path $finalFolder -ItemType Directory -Force | Out-Null }
-
-# Получаем разрешение экрана — работает даже от SYSTEM в 99% случаев
-$screen      = [System.Windows.Forms.Screen]::PrimaryScreen
-$screenWidth = $screen.Bounds.Width
-$screenHeight= $screen.Bounds.Height
-
-# Если вдруг не сработало (редко) — берём из WMI
-if ($screenWidth -le 800) {
-    $video = Get-CimInstance Win32_VideoController | Where-Object CurrentHorizontalResolution | Select-Object -First 1
-    if ($video) {
-        $screenWidth  = $video.CurrentHorizontalResolution
-        $screenHeight = $video.CurrentVerticalResolution
-    }
+function Write-Log {
+    param([string]$Message)
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "$timestamp - $Message" | Out-File -FilePath $logFile -Append -Encoding UTF8
 }
 
-# Загружаем и растягиваем background.jpg сразу под экран
-$originalImg = [System.Drawing.Image]::FromFile($background)
-$resizedImg  = New-Object System.Drawing.Bitmap($screenWidth, $screenHeight)
+Write-Log "=== Start ==="
 
-$g = [System.Drawing.Graphics]::FromImage($resizedImg)
-$g.InterpolationMode    = 'HighQualityBicubic'
-$g.SmoothingMode        = 'HighQuality'
-$g.PixelOffsetMode      = 'HighQuality'
-$g.CompositingQuality   = 'HighQuality'
-$g.DrawImage($originalImg, 0, 0, $screenWidth, $screenHeight)
-$g.Dispose()
+if (-not (Test-Path $lockscreenfinal)) {
+    New-Item -Path $lockscreenfinal -ItemType Directory -Force | Out-Null
+}
+
+if (-not (Test-Path $backgroundImg)) {
+    Write-Log "ERROR: background.jpg not found"
+    exit 1
+}
+
+# Получаем разрешение основного монитора
+Add-Type -AssemblyName System.Windows.Forms
+$screen = [System.Windows.Forms.Screen]::PrimaryScreen
+$screenWidth = $screen.Bounds.Width
+$screenHeight = $screen.Bounds.Height
+
+$originalImg = [System.Drawing.Image]::FromFile($backgroundImg)
+$resizedImg = New-Object System.Drawing.Bitmap($screenWidth, $screenHeight)
+
+$gResize = [System.Drawing.Graphics]::FromImage($resizedImg)
+$gResize.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+$gResize.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+$gResize.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+$gResize.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+$gResize.DrawImage($originalImg, 0, 0, $screenWidth, $screenHeight)
+$gResize.Dispose()
 $originalImg.Dispose()
 
-# === ТВОЯ ЛОГИКА ТЕКСТА ПОЛНОСТЬЮ СОХРАНЕНА ===
 $osInfo = Get-CimInstance Win32_OperatingSystem
 $buildNumber = [int]$osInfo.BuildNumber
-$leftClockBuilds = @(10240,10586,14393,15063,16299,17134,17763,18362,18363,19041,19042,19043,19044,19045)
+$leftClockBuilds = @(10240, 10586, 14393, 15063, 16299, 17134, 17763, 18362, 18363, 19041, 19042, 19043, 19044, 19045)
 
-$isSmallResolution = $screenWidth -lt 1400
+$smallResolutionThreshold = 1400
+$isSmallResolution = $screenWidth -lt $smallResolutionThreshold
 
 if ($leftClockBuilds -contains $buildNumber) {
-    $leftMargin = if ($isSmallResolution) { [int]($screenWidth * 0.12) } else { [int]($screenWidth * 0.03) }
-    $topMargin  = if ($isSmallResolution) { [int]($screenHeight * 0.08) } else { [int]($screenHeight * 0.05) }
+    if ($isSmallResolution) {
+        $leftMargin = [int]($screenWidth * 0.12)
+        $topMargin = [int]($screenHeight * 0.08)
+    } else {
+        $leftMargin = [int]($screenWidth * 0.03)
+        $topMargin = [int]($screenHeight * 0.05)
+    }
     $position = "TopLeft"
 } else {
-    $leftMargin   = if ($isSmallResolution) { [int]($screenWidth * 0.12) } else { [int]($screenWidth * 0.03) }
-    $bottomMargin = if ($isSmallResolution) { [int]($screenHeight * 0.08) } else { [int]($screenHeight * 0.05) }
+    if ($isSmallResolution) {
+        $leftMargin = [int]($screenWidth * 0.12)
+        $bottomMargin = [int]($screenHeight * 0.08)
+    } else {
+        $leftMargin = [int]($screenWidth * 0.03)
+        $bottomMargin = [int]($screenHeight * 0.05)
+    }
     $position = "BottomLeft"
 }
 
-# Правильное имя пользователя (не SYSTEM!)
-$user = (Get-CimInstance Win32_ComputerSystem).UserName -split '\\' | Select-Object -Last 1
-if (-not $user) { $user = $env:USERNAME }
+Write-Log "Build: $buildNumber, Position: $position, SmallRes: $isSmallResolution"
 
 $hostname = $env:COMPUTERNAME
+
+$user = "Unknown"
+try {
+    $explorerProcess = Get-WmiObject Win32_Process -Filter "Name='explorer.exe'" | Select-Object -First 1
+    if ($explorerProcess) {
+        $owner = $explorerProcess.GetOwner()
+        if ($owner.User) {
+            $user = $owner.User
+            Write-Log "User from explorer.exe: $user"
+        }
+    }
+} catch {
+    Write-Log "explorer.exe method failed"
+}
+
+if ($user -eq "Unknown") {
+    try {
+        $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
+        $lastUser = Get-ItemProperty -Path $regPath -Name "LastLoggedOnUser" -ErrorAction Stop
+        $user = ($lastUser.LastLoggedOnUser -split '\\')[-1]
+        Write-Log "User from registry: $user"
+    } catch {
+        Write-Log "Registry method failed"
+    }
+}
+
+if ($user -eq "Unknown") {
+    try {
+        $cs2 = Get-CimInstance Win32_ComputerSystem
+        if ($cs2.UserName) {
+            $user = ($cs2.UserName -split '\\')[-1]
+            Write-Log "User from Win32_ComputerSystem: $user"
+        }
+    } catch {
+        Write-Log "Win32_ComputerSystem method failed"
+    }
+}
+
 $cs = Get-CimInstance Win32_ComputerSystem
 $domain = if ($cs.PartOfDomain) { $cs.Domain } else { $cs.Workgroup }
 
-# Сетевые адаптеры — полностью твой код
+Write-Log "PC: $hostname, User: $user, Domain: $domain"
+
 $results = @()
-$adapters = Get-CimInstance Win32_NetworkAdapter | Where-Object { $_.NetEnabled -eq $true -and $_.NetConnectionID }
+$adapters = Get-CimInstance -ClassName Win32_NetworkAdapter | Where-Object {
+    $_.InterfaceIndex -ne $null -and $_.Name -ne $null -and $_.NetEnabled -eq $true
+}
 
 foreach ($adapter in $adapters) {
-    $ips = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-           Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.*" }
-    $speed = (Get-NetAdapter -InterfaceIndex $adapter.InterfaceIndex -ErrorAction SilentlyContinue).LinkSpeed -replace ' Gb.*','Гб/с' -replace ' Mb.*','Мб/с'
-    foreach ($ip in $ips) {
-        $results += [PSCustomObject]@{
-            IPAddress     = $ip.IPAddress
-            InterfaceName = $adapter.NetConnectionID
-            AdapterName   = $adapter.Name
-            Speed         = $speed
+    try {
+        $ipAddresses = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction Stop |
+            Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.IPAddress -notlike '169.*' }
+
+        $netAdapter = Get-NetAdapter -InterfaceIndex $adapter.InterfaceIndex -ErrorAction SilentlyContinue
+
+        foreach ($ip in $ipAddresses) {
+            $interfaceName = $adapter.NetConnectionID
+            if (-not $interfaceName) { $interfaceName = $adapter.Name }
+
+            $speed = if ($netAdapter -and $netAdapter.LinkSpeed) {
+                $netAdapter.LinkSpeed
+            } else {
+                "no data"
+            }
+
+            $results += [PSCustomObject]@{
+                IPAddress     = $ip.IPAddress
+                InterfaceName = $interfaceName
+                AdapterName   = $adapter.Name
+                Speed         = $speed
+            }
         }
-    }
+    } catch { continue }
 }
 
 $textLines = @()
-$textLines += ("{0,-13} {1}" -f "Имя ПК:", $hostname)
-$textLines += ("{0,-13} {1}" -f "Пользователь:", $user)
-$textLines += ("{0,-13} {1}" -f "Домен:", $domain)
+$textLines += ("{0,-13} {1}" -f "PC Name:", $hostname)
+$textLines += ("{0,-13} {1}" -f "User:", $user)
+$textLines += ("{0,-13} {1}" -f "Domain:", $domain)
 $textLines += ""
 
 if ($results.Count -gt 0) {
-    $textLines += "Сетевые адаптеры:"
+    $textLines += "Network Adapters:"
     $textLines += ""
 
     if ($isSmallResolution) {
-        $w1=15; $w2=12; $w3=20; $w4=12
+        $w1 = 15; $w2 = 12; $w3 = 20; $w4 = 12
     } else {
-        $w1=16; $w2=20; $w3=35; $w4=16
+        $w1 = 16; $w2 = 20; $w3 = 35; $w4 = 16
     }
 
-    $textLines += ("{0,-$w1} {1,-$w2} {2,-$w3} {3,-$w4}" -f "IP адрес","Интерфейс","Адаптер","Скорость")
-    $textLines += ("{0,-$w1} {1,-$w2} {2,-$w3} {3,-$w4}" -f ("-"*$w1),("-"*$w2),("-"*$w3),("-"*$w4))
+    $textLines += ("{0,-$w1} {1,-$w2} {2,-$w3} {3,-$w4}" -f "IP Address", "Interface", "Adapter", "Speed")
+    $textLines += ("{0,-$w1} {1,-$w2} {2,-$w3} {3,-$w4}" -f ("-" * $w1), ("-" * $w2), ("-" * $w3), ("-" * $w4))
 
     foreach ($r in $results) {
-        $a = if ($r.AdapterName.Length -gt ($w3-2)) { $r.AdapterName.Substring(0,$w3-5)+"..." } else { $r.AdapterName }
-        $i = if ($r.InterfaceName.Length -gt ($w2-2)) { $r.InterfaceName.Substring(0,$w2-5)+"..." } else { $r.InterfaceName }
-        $textLines += ("{0,-$w1} {1,-$w2} {2,-$w3} {3,-$w4}" -f $r.IPAddress, $i, $a, $r.Speed)
+        $adapterShort = if ($r.AdapterName.Length -gt ($w3 - 2)) {
+            $r.AdapterName.Substring(0, $w3 - 3) + "..."
+        } else { $r.AdapterName }
+
+        $ifaceShort = if ($r.InterfaceName.Length -gt ($w2 - 2)) {
+            $r.InterfaceName.Substring(0, $w2 - 3) + "..."
+        } else { $r.InterfaceName }
+
+        $textLines += ("{0,-$w1} {1,-$w2} {2,-$w3} {3,-$w4}" -f $r.IPAddress, $ifaceShort, $adapterShort, $r.Speed)
     }
 } else {
-    $textLines += "Активные сетевые адаптеры не найдены"
+    $textLines += "No active network adapters found"
 }
 
-# === РИСОВАНИЕ ТЕКСТА — ТВОЯ ЛОГИКА 1 в 1 ===
 $gText = [System.Drawing.Graphics]::FromImage($resizedImg)
-$gText.SmoothingMode       = 'AntiAlias'
-$gText.TextRenderingHint   = 'ClearTypeGridFit'
+$gText.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+$gText.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
 
-$fontSize = if ($isSmallResolution) { [Math]::Max([int]($screenWidth/100),8) } else { [Math]::Max([int]($screenWidth/110),12) }
+if ($isSmallResolution) {
+    $fontSize = [Math]::Max([int]($screenWidth / 100), 8)
+} else {
+    $fontSize = [Math]::Max([int]($screenWidth / 110), 12)
+}
+
 $font = New-Object System.Drawing.Font("Consolas", $fontSize, [System.Drawing.FontStyle]::Bold)
 
-# Автоподгонка шрифта
-$temp = [System.Drawing.Graphics]::FromImage($resizedImg)
-$maxW = 0
-foreach ($line in $textLines) { $maxW = [Math]::Max($maxW, $temp.MeasureString($line,$font).Width) }
-$temp.Dispose()
+$tempGraphics = [System.Drawing.Graphics]::FromImage($resizedImg)
+$maxTextWidth = 0
+foreach ($line in $textLines) {
+    $size = $tempGraphics.MeasureString($line, $font)
+    if ($size.Width -gt $maxTextWidth) { $maxTextWidth = $size.Width }
+}
+$tempGraphics.Dispose()
 
-if ($maxW -gt ($screenWidth - $leftMargin*2)) {
-    $fontSize = [Math]::Max([int]($fontSize*0.9),7)
-    $font = New-Object System.Drawing.Font("Consolas", $fontSize, [System.Drawing.FontStyle]::Bold)
+$safeZoneWidth = $screenWidth - ($leftMargin * 2)
+if ($maxTextWidth -gt $safeZoneWidth) {
+    $newFontSize = [Math]::Max([int]($fontSize * 0.9), 7)
+    if ($newFontSize -lt $fontSize) {
+        $fontSize = $newFontSize
+        $font.Dispose()
+        $font = New-Object System.Drawing.Font("Consolas", $fontSize, [System.Drawing.FontStyle]::Bold)
+    }
 }
 
-$textBrush   = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-$shadowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160,0,0,0))
+$textBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 255, 255))
+$shadowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160, 0, 0, 0))
 
 $lineHeight = [int]($fontSize * 1.3)
 $x = $leftMargin
-$y = if ($position -eq "BottomLeft") { $screenHeight - ($lineHeight * $textLines.Count) - $bottomMargin } else { $topMargin }
 
-foreach ($line in $textLines) {
-    $gText.DrawString($line, $font, $shadowBrush, $x+1, $y+1)
-    $gText.DrawString($line, $font, $textBrush,   $x,   $y)
-    $y += $lineHeight
+if ($position -eq "BottomLeft") {
+    $yStart = $screenHeight - ($lineHeight * $textLines.Count) - $bottomMargin
+} else {
+    $yStart = $topMargin
 }
 
-# Сохраняем сразу финальный PNG
-$resizedImg.Save($finalImage, [System.Drawing.Imaging.ImageFormat]::Png)
+foreach ($line in $textLines) {
+    $posX = [float]$x
+    $posY = [float]$yStart
+    $gText.DrawString($line, $font, $shadowBrush, [System.Drawing.PointF]::new($posX + 1, $posY + 1))
+    $gText.DrawString($line, $font, $textBrush, [System.Drawing.PointF]::new($posX, $posY))
+    $yStart += $lineHeight
+}
 
-# Освобождаем
+$resizedImg.Save($imageDest, [System.Drawing.Imaging.ImageFormat]::Png)
+
+Write-Log "SUCCESS: ${screenWidth}x${screenHeight} font:${fontSize}pt user:$user"
+Write-Log "=== Done ==="
+
 $gText.Dispose()
 $resizedImg.Dispose()
 $font.Dispose()
 $textBrush.Dispose()
 $shadowBrush.Dispose()
-
-Write-Host "Готово! $finalImage — $($screenWidth)x$screenHeight"
