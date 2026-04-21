@@ -25,8 +25,9 @@
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLFOLDER" Name="UpdateLockScreen">
-                    <Component Id="MainFiles" Guid="D4E5F6A7-B8C9-4D3E-8F1A-2B3C4D5E6F79" Win64="yes">
+                  <Component Id="MainFiles" Guid="D4E5F6A7-B8C9-4D3E-8F1A-2B3C4D5E6F79" Win64="yes">
                         <File Source="files\install-task.ps1" />
+                        <File Source="files\update-lockscreen.ps1" />
                         <File Source="files\run-first-update.ps1" />
                         <File Source="files\uninstall-script.ps1" />
                         <File Source="files\background.jpg" />
