@@ -19,7 +19,9 @@ jobs:
         run: echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
 
       - name: 🏗 Build MSI
-        run: powershell -ExecutionPolicy Bypass -File build-msi.ps1
+        shell: powershell
+        run: |
+          .\build-msi.ps1
 
       - name: 📦 Create Release + upload MSI
         uses: softprops/action-gh-release@v2
