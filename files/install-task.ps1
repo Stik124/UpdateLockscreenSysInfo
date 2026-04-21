@@ -2,7 +2,7 @@
 $basePath = "C:\Program Files\UpdateLockScreen"
 $background = Join-Path $basePath "background.jpg"
 $lockscreenfinal = Join-Path $basePath "LockScreenFinal"
-$imgOriginal = Join-Path $basePath "lockscreen_original.jpg"
+#$imgOriginal = Join-Path $basePath "lockscreen_original.jpg"
 $vbsPath = Join-Path $basePath "run-hidden-update-lockscreen.vbs"
 $taskName = "UpdateLockScreen"
 
@@ -15,9 +15,9 @@ if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
 New-Item -Path $lockscreenfinal -ItemType Directory -Force | Out-Null
 
 # Копируем фоновое изображение
-if (Test-Path $background) {
-    Copy-Item -Path $background -Destination $imgOriginal -Force
-}
+#if (Test-Path $background) {
+#    Copy-Item -Path $background -Destination $imgOriginal -Force
+#}
 
 # Реестр для экрана блокировки
 REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /f | Out-Null
