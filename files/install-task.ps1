@@ -78,8 +78,8 @@ $taskXml = @"
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>powershell.exe</Command>
-      <Arguments>-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Program Files\UpdateLockScreen\update-lockscreen.ps1"</Arguments>
+      <Command>wscript.exe</Command>
+      <Arguments>"C:\Program Files\UpdateLockScreen\run-hidden-update-lockscreen.vbs"</Arguments>
     </Exec>
   </Actions>
 </Task>
