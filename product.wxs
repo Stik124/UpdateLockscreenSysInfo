@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <Product Id="*"
-             Name="UpdateLockScreen"
-             Language="1033"
-             Version="VERSION_PLACEHOLDER"
-             Manufacturer="Avdeev D.V."
-             UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
+    <Product Id="*" 
+         Name="UpdateLockScreen"
+         Language="1049"
+         Version="VERSION_PLACEHOLDER"
+         Manufacturer="Avdeev D.V."
+         UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D"
+         Codepage="1251">
 
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" 
                  Description="UpdateLockScreen Installer" />
