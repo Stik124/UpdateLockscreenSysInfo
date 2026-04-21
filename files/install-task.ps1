@@ -35,7 +35,7 @@ Set objShell = Nothing
 '@
 Set-Content -Path $vbsPath -Value $vbsContent -Encoding ASCII
 
-# Создание задачи планировщика
+# Создание задачи планировщика от SYSTEM
 $startTime = (Get-Date).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss")
 
 $taskXml = @"
@@ -47,6 +47,9 @@ $taskXml = @"
     <URI>\UpdateLockScreen</URI>
   </RegistrationInfo>
   <Triggers>
+    <BootTrigger>
+      <Enabled>true</Enabled>
+    </BootTrigger>
     <LogonTrigger>
       <Enabled>true</Enabled>
     </LogonTrigger>
@@ -61,8 +64,8 @@ $taskXml = @"
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <GroupId>S-1-5-32-545</GroupId>
-      <RunLevel>LeastPrivilege</RunLevel>
+      <UserId>S-1-5-18</UserId>
+      <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
   <Settings>
@@ -71,9 +74,18 @@ $taskXml = @"
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <AllowHardTerminate>true</AllowHardTerminate>
     <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
     <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
     <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
+    <Priority>7</Priority>
   </Settings>
   <Actions Context="Author">
     <Exec>
