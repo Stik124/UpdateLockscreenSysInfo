@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <Product Id="*" 
-             Name="UpdateLockScreen" 
+    <Product Id="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D"
+             Name="UpdateLockScreen"
              Language="1033"
              Version="VERSION_PLACEHOLDER"
              Manufacturer="Avdeev D.V."
@@ -12,7 +12,7 @@
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
         <!-- ==================== ОБНОВЛЕНИЕ ==================== -->
-        <MajorUpgrade 
+        <MajorUpgrade
             DowngradeErrorMessage="Новая версия UpdateLockScreen уже установлена. Установка старой версии невозможна."
             Schedule="afterInstallInitialize" />
 
@@ -35,11 +35,11 @@
         </Directory>
 
         <!-- ==================== CUSTOM ACTIONS ==================== -->
-        
+
         <!-- Остановка процессов перед обновлением/удалением -->
         <CustomAction Id="StopProcesses"
             Directory="INSTALLFOLDER"
-            ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Get-Process wscript,powershell -ErrorAction SilentlyContinue | Where-Object {$_.Path -like '*UpdateLockScreen*'} | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2"'
+            ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Get-Process wscript,powershell -ErrorAction SilentlyContinue | Where-Object {$_.Path -like ''*UpdateLockScreen*''} | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2"'
             Execute="immediate"
             Return="ignore"
             Impersonate="no" />
