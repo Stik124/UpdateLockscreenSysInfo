@@ -18,17 +18,18 @@ Remove-Item "*.wixobj" -ErrorAction SilentlyContinue
 Remove-Item "*.wixpdb" -ErrorAction SilentlyContinue
 
 Write-Host "Checking required files..." -ForegroundColor Yellow
-if (!(Test-Path "files\install-script.ps1")) {
-    Write-Error "Missing: files\install-script.ps1"
-    exit 1
-}
-if (!(Test-Path "files\uninstall-script.ps1")) {
-    Write-Error "Missing: files\uninstall-script.ps1"
-    exit 1
-}
-if (!(Test-Path "files\background.jpg")) {
-    Write-Error "Missing: files\background.jpg"
-    exit 1
+$requiredFiles = @(
+    "files\install-task.ps1",
+    "files\run-first-update.ps1",
+    "files\uninstall-script.ps1",
+    "files\background.jpg"
+)
+
+foreach ($file in $requiredFiles) {
+    if (!(Test-Path $file)) {
+        Write-Error "Missing: $file"
+        exit 1
+    }
 }
 Write-Host "All files found" -ForegroundColor Green
 
