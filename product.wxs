@@ -11,7 +11,6 @@
 
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
-        <!-- ==================== ОБНОВЛЕНИЕ ==================== -->
         <MajorUpgrade
             DowngradeErrorMessage="Новая версия UpdateLockScreen уже установлена. Установка старой версии невозможна."
             Schedule="afterInstallInitialize" />
@@ -34,42 +33,36 @@
             </Directory>
         </Directory>
 
-        <!-- ==================== CUSTOM ACTIONS ==================== -->
-
-        <!-- Остановка процессов перед обновлением/удалением -->
         <CustomAction Id="StopProcesses"
             Directory="INSTALLFOLDER"
-            ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Get-Process wscript,powershell -ErrorAction SilentlyContinue | Where-Object {$_.Path -like ''*UpdateLockScreen*''} | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2"'
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Get-Process wscript,powershell -ErrorAction SilentlyContinue | Where-Object {$_.Path -like '*UpdateLockScreen*'} | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2&quot;"
             Execute="immediate"
             Return="ignore"
             Impersonate="no" />
 
         <CustomAction Id="RunInstallScript"
             Directory="INSTALLFOLDER"
-            ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "install-script.ps1"'
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-script.ps1&quot;"
             Execute="deferred"
             Return="check"
             Impersonate="no" />
 
         <CustomAction Id="RunUninstallScript"
             Directory="INSTALLFOLDER"
-            ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "uninstall-script.ps1"'
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;uninstall-script.ps1&quot;"
             Execute="deferred"
             Return="ignore"
             Impersonate="no" />
 
         <InstallExecuteSequence>
-            <!-- Останавливаем процессы ПЕРЕД началом установки/обновления -->
             <Custom Action="StopProcesses" Before="InstallValidate">
                 Installed OR UPGRADINGPRODUCTCODE
             </Custom>
 
-            <!-- При установке и обновлении -->
             <Custom Action="RunInstallScript" After="InstallFiles">
                 NOT Installed OR UPGRADINGPRODUCTCODE
             </Custom>
 
-            <!-- При удалении -->
             <Custom Action="RunUninstallScript" Before="RemoveFiles">
                 REMOVE="ALL"
             </Custom>
