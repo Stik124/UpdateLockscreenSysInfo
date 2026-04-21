@@ -66,3 +66,11 @@ if (Test-Path $msiPath) {
     Write-Host "Size: $sizeKB KB" -ForegroundColor Yellow
     Write-Host "Path: $msiPath" -ForegroundColor Cyan
 }
+
+$requiredFiles = @(
+    "files\install-task.ps1",
+    "files\update-lockscreen.ps1",
+    "files\run-first-update.ps1",
+    "files\uninstall-script.ps1",
+    "files\background.jpg"
+)
