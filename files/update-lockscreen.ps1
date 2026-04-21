@@ -48,22 +48,51 @@ try {
     }
 }
 
-# Load and resize image
+# Load original image
 try {
     $originalImg = [System.Drawing.Image]::FromFile($imgOriginal)
+    $originalWidth = $originalImg.Width
+    $originalHeight = $originalImg.Height
+    
+    Write-Log "Original image size: ${originalWidth}x${originalHeight}"
+    
+    # Calculate scaling to FILL screen (with crop if needed)
+    $scaleX = $screenWidth / $originalWidth
+    $scaleY = $screenHeight / $originalHeight
+    $scale = [Math]::Max($scaleX, $scaleY)  # Use MAX to fill entire screen
+    
+    $scaledWidth = [int]($originalWidth * $scale)
+    $scaledHeight = [int]($originalHeight * $scale)
+    
+    Write-Log "Scaled size: ${scaledWidth}x${scaledHeight}, scale: $scale"
+    
+    # Center the image
+    $offsetX = [int](($screenWidth - $scaledWidth) / 2)
+    $offsetY = [int](($screenHeight - $scaledHeight) / 2)
+    
+    Write-Log "Offset: X=$offsetX, Y=$offsetY"
+    
+    # Create final image
     $resizedImg = New-Object System.Drawing.Bitmap($screenWidth, $screenHeight)
-
+    
     $gResize = [System.Drawing.Graphics]::FromImage($resizedImg)
     $gResize.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     $gResize.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
     $gResize.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $gResize.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
-
-    $gResize.DrawImage($originalImg, 0, 0, $screenWidth, $screenHeight)
+    
+    # Fill background with black (in case of aspect ratio mismatch)
+    $gResize.Clear([System.Drawing.Color]::Black)
+    
+    # Draw scaled image
+    $destRect = New-Object System.Drawing.Rectangle($offsetX, $offsetY, $scaledWidth, $scaledHeight)
+    $srcRect = New-Object System.Drawing.Rectangle(0, 0, $originalWidth, $originalHeight)
+    
+    $gResize.DrawImage($originalImg, $destRect, $srcRect, [System.Drawing.GraphicsUnit]::Pixel)
     $gResize.Dispose()
     $originalImg.Dispose()
     
-    Write-Log "Image loaded and resized"
+    Write-Log "Image loaded and resized with proper scaling"
 } catch {
     Write-Log "ERROR loading image: $($_.Exception.Message)"
     exit 1
@@ -99,13 +128,42 @@ if ($leftClockBuilds -contains $buildNumber) {
 
 Write-Log "Text position: $position, left margin: $leftMargin"
 
-# Collect system information
+# Collect system information - get ACTUAL logged in user
+$loggedInUser = $null
+try {
+    # Method 1: Get from current session
+    $sessions = quser 2>$null | Select-Object -Skip 1
+    foreach ($session in $sessions) {
+        if ($session -match '(\S+)\s+(\S+)\s+(\d+)\s+Active') {
+            $loggedInUser = $matches[1]
+            break
+        }
+    }
+    
+    # Method 2: Fallback to registry
+    if (-not $loggedInUser) {
+        $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
+        if (Test-Path $regPath) {
+            $lastUser = Get-ItemProperty -Path $regPath -Name "LastLoggedOnUser" -ErrorAction SilentlyContinue
+            if ($lastUser) {
+                $loggedInUser = $lastUser.LastLoggedOnUser -replace '^.*\\', ''
+            }
+        }
+    }
+    
+    # Method 3: Ultimate fallback
+    if (-not $loggedInUser) {
+        $loggedInUser = $env:USERNAME
+    }
+} catch {
+    $loggedInUser = $env:USERNAME
+}
+
 $hostname = $env:COMPUTERNAME
-$user = $env:USERNAME
 $cs = Get-CimInstance Win32_ComputerSystem
 $domain = if ($cs.PartOfDomain) { $cs.Domain } else { $cs.Workgroup }
 
-Write-Log "Hostname: $hostname, User: $user, Domain: $domain"
+Write-Log "Hostname: $hostname, User: $loggedInUser, Domain: $domain"
 
 # Network adapters
 $results = @()
@@ -151,7 +209,7 @@ foreach ($adapter in $adapters) {
 # Build text lines
 $textLines = @()
 $textLines += ("{0,-13} {1}" -f "PC Name:", $hostname)
-$textLines += ("{0,-13} {1}" -f "User:", $user)
+$textLines += ("{0,-13} {1}" -f "User:", $loggedInUser)
 $textLines += ("{0,-13} {1}" -f "Domain:", $domain)
 $textLines += ""
 
