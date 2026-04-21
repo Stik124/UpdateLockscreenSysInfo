@@ -2,7 +2,7 @@
 Add-Type -AssemblyName System.Drawing
 
 $basePath = "C:\Program Files\UpdateLockScreen"
-$imgOriginal = Join-Path $basePath "lockscreen_original.jpg"
+$backgroundOriginal = Join-Path $basePath "background.jpg"
 $lockscreenfinal = Join-Path $basePath "LockScreenFinal"
 $imageDest = Join-Path $lockscreenfinal "lockscreen.png"
 $logFile = Join-Path $basePath "update-lockscreen.log"
@@ -22,9 +22,9 @@ if (-not (Test-Path $lockscreenfinal)) {
     Write-Log "Created folder: $lockscreenfinal"
 }
 
-# Проверяем наличие исходного изображения
-if (-not (Test-Path $imgOriginal)) {
-    Write-Log "ERROR: File not found $imgOriginal"
+# Проверяем наличие исходного фона
+if (-not (Test-Path $backgroundOriginal)) {
+    Write-Log "ERROR: File not found $backgroundOriginal"
     exit 1
 }
 
@@ -34,12 +34,11 @@ try {
     $screen = [System.Windows.Forms.Screen]::PrimaryScreen
     $screenWidth = $screen.Bounds.Width
     $screenHeight = $screen.Bounds.Height
-    Write-Log "Screen resolution from System.Windows.Forms: ${screenWidth}x${screenHeight}"
+    Write-Log "Screen resolution: ${screenWidth}x${screenHeight}"
 } catch {
     Write-Log "WARNING: Could not get screen resolution via System.Windows.Forms"
     Write-Log "Error: $($_.Exception.Message)"
     
-    # Fallback: используем разрешение по умолчанию
     try {
         Add-Type -TypeDefinition @'
 using System;
@@ -53,7 +52,7 @@ public class DisplayInfo {
         $screenHeight = [DisplayInfo]::GetSystemMetrics(1)
         Write-Log "Resolution from GetSystemMetrics: ${screenWidth}x${screenHeight}"
     } catch {
-        Write-Log "WARNING: GetSystemMetrics failed, using default 1920x1080"
+        Write-Log "WARNING: Using default 1920x1080"
         $screenWidth = 1920
         $screenHeight = 1080
     }
@@ -61,7 +60,9 @@ public class DisplayInfo {
 
 # Загружаем и изменяем изображение под разрешение экрана с высоким качеством
 try {
-    $originalImg = [System.Drawing.Image]::FromFile($imgOriginal)
+    Write-Log "Loading and resizing background image"
+    
+    $originalImg = [System.Drawing.Image]::FromFile($backgroundOriginal)
     $resizedImg = New-Object System.Drawing.Bitmap($screenWidth, $screenHeight)
 
     $gResize = [System.Drawing.Graphics]::FromImage($resizedImg)
@@ -74,13 +75,13 @@ try {
     $gResize.Dispose()
     $originalImg.Dispose()
     
-    Write-Log "Image loaded and resized to ${screenWidth}x${screenHeight}"
+    Write-Log "Image resized to ${screenWidth}x${screenHeight}"
 } catch {
     Write-Log "ERROR loading/resizing image: $($_.Exception.Message)"
     exit 1
 }
 
-# Определяем позицию текста на основе разрешения и билда Windows
+# Определяем позицию текста на основе разрешения
 $osInfo = Get-CimInstance Win32_OperatingSystem
 $buildNumber = [int]$osInfo.BuildNumber
 
@@ -88,21 +89,23 @@ $leftClockBuilds = @(10240, 10586, 14393, 15063, 16299, 17134, 17763, 18362, 183
 
 # Настройка порога маленького разрешения
 $smallResolutionThreshold = 1400
+
+# Определяем маленькое разрешение
 $isSmallResolution = $screenWidth -lt $smallResolutionThreshold
 
-# РАЗНЫЕ НАСТРОЙКИ ДЛЯ МАЛЕНЬКИХ И БОЛЬШИХ РАЗРЕШЕНИЙ
+# РАЗНЫЕ НАСТРОЙКИ ДЛЯ МАЛЕНЬКИХ И БОЛЬШИХ РАЗРЕШЕНИЙ (УВЕЛИЧЕНЫ ОТСТУПЫ)
 if ($leftClockBuilds -contains $buildNumber) {
     if ($isSmallResolution) {
-        $leftMargin = [int]($screenWidth * 0.12)
+        $leftMargin = [int]($screenWidth * 0.12)   # 12% для маленьких (увеличили)
         $topMargin = [int]($screenHeight * 0.08)
     } else {
-        $leftMargin = [int]($screenWidth * 0.03)
+        $leftMargin = [int]($screenWidth * 0.03)   # 3% для больших
         $topMargin = [int]($screenHeight * 0.05)
     }
     $position = "TopLeft"
 } else {
     if ($isSmallResolution) {
-        $leftMargin = [int]($screenWidth * 0.12)
+        $leftMargin = [int]($screenWidth * 0.12)   # 12% для маленьких (увеличили)
         $bottomMargin = [int]($screenHeight * 0.08)
     } else {
         $leftMargin = [int]($screenWidth * 0.03)
@@ -113,13 +116,11 @@ if ($leftClockBuilds -contains $buildNumber) {
 
 Write-Log "Windows Build: $buildNumber, Position: $position, Small resolution: $isSmallResolution"
 
-# Получаем имя компьютера
 $hostname = $env:COMPUTERNAME
 
-# Получаем РЕАЛЬНОГО залогиненного пользователя (не SYSTEM)
+# Получаем залогиненного пользователя
 $user = "Unknown"
 try {
-    # Метод 1: Через процесс explorer.exe
     $explorerProcess = Get-WmiObject Win32_Process -Filter "Name='explorer.exe'" -ErrorAction Stop | 
         Select-Object -First 1
     
@@ -131,10 +132,9 @@ try {
         }
     }
 } catch {
-    Write-Log "Could not get user from explorer.exe: $($_.Exception.Message)"
+    Write-Log "Could not get user from explorer.exe"
 }
 
-# Метод 2: Fallback через реестр
 if ($user -eq "Unknown") {
     try {
         $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
@@ -146,11 +146,10 @@ if ($user -eq "Unknown") {
             }
         }
     } catch {
-        Write-Log "Could not get user from registry: $($_.Exception.Message)"
+        Write-Log "Could not get user from registry"
     }
 }
 
-# Метод 3: Через Win32_ComputerSystem
 if ($user -eq "Unknown") {
     try {
         $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop
@@ -159,17 +158,17 @@ if ($user -eq "Unknown") {
             Write-Log "User found via Win32_ComputerSystem: $user"
         }
     } catch {
-        Write-Log "Could not get user from Win32_ComputerSystem: $($_.Exception.Message)"
+        Write-Log "Could not get user from Win32_ComputerSystem"
     }
 }
 
-# Домен или рабочая группа
+# --- Домен или рабочая группа ---
 $cs = Get-CimInstance Win32_ComputerSystem
 $domain = if ($cs.PartOfDomain) { $cs.Domain } else { $cs.Workgroup }
 
 Write-Log "System info - PC: $hostname, User: $user, Domain: $domain"
 
-# Сетевые адаптеры
+# --- Сетевые адаптеры ---
 $results = @()
 $adapters = Get-CimInstance -ClassName Win32_NetworkAdapter | Where-Object {
     $_.InterfaceIndex -ne $null -and $_.Name -ne $null -and $_.NetEnabled -eq $true
@@ -210,8 +209,10 @@ foreach ($adapter in $adapters) {
     }
 }
 
-# Формируем текст для картинки
+# --- Формируем текст для картинки ---
 $textLines = @()
+
+# ЕДИНЫЙ СТИЛЬ ДЛЯ ВСЕХ РАЗРЕШЕНИЙ
 $textLines += ("{0,-13} {1}" -f "PC Name:", $hostname)
 $textLines += ("{0,-13} {1}" -f "User:", $user)
 $textLines += ("{0,-13} {1}" -f "Domain:", $domain)
@@ -222,52 +223,93 @@ if ($results.Count -gt 0) {
     $textLines += ""
     
     if ($isSmallResolution) {
-        # КОМПАКТНЫЙ ФОРМАТ
+        # КОМПАКТНЫЙ ФОРМАТ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ (ТАКОЙ ЖЕ СТИЛЬ)
         $ipColumnWidth = 15
         $interfaceColumnWidth = 12
         $adapterColumnWidth = 20
         $speedColumnWidth = 12
+        
+        # ЗАГОЛОВКИ ТАБЛИЦЫ
+        $headerLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
+            "IP Address", "Interface", "Adapter", "Speed")
+        $separatorLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
+            ("-" * $ipColumnWidth), 
+            ("-" * $interfaceColumnWidth),
+            ("-" * $adapterColumnWidth),
+            ("-" * $speedColumnWidth))
+        
+        $textLines += $headerLine
+        $textLines += $separatorLine
+        
+        # ДАННЫЕ АДАПТЕРОВ
+        foreach ($r in $results) {
+            # Обрезаем длинные названия адаптеров
+            $adapterNameShort = if ($r.AdapterName.Length -gt ($adapterColumnWidth - 2)) { 
+                $r.AdapterName.Substring(0, $adapterColumnWidth - 3) + "..." 
+            } else { 
+                $r.AdapterName 
+            }
+            
+            # Обрезаем длинные названия интерфейсов
+            $interfaceNameShort = if ($r.InterfaceName.Length -gt ($interfaceColumnWidth - 2)) { 
+                $r.InterfaceName.Substring(0, $interfaceColumnWidth - 3) + "..." 
+            } else { 
+                $r.InterfaceName 
+            }
+            
+            # ВЫРАВНИВАЕМ КАЖДУЮ КОЛОНКУ
+            $dataLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
+                $r.IPAddress, 
+                $interfaceNameShort,
+                $adapterNameShort,
+                $r.Speed)
+            
+            $textLines += $dataLine
+        }
     } else {
-        # ПОЛНЫЙ ФОРМАТ
+        # ПОЛНЫЙ ФОРМАТ ДЛЯ БОЛЬШИХ ЭКРАНОВ
         $ipColumnWidth = 16
         $interfaceColumnWidth = 20
         $adapterColumnWidth = 35
         $speedColumnWidth = 16
-    }
-    
-    # ЗАГОЛОВКИ ТАБЛИЦЫ
-    $headerLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
-        "IP Address", "Interface", "Adapter", "Speed")
-    $separatorLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
-        ("-" * $ipColumnWidth), 
-        ("-" * $interfaceColumnWidth),
-        ("-" * $adapterColumnWidth),
-        ("-" * $speedColumnWidth))
-    
-    $textLines += $headerLine
-    $textLines += $separatorLine
-    
-    # ДАННЫЕ АДАПТЕРОВ
-    foreach ($r in $results) {
-        $adapterNameShort = if ($r.AdapterName.Length -gt ($adapterColumnWidth - 2)) { 
-            $r.AdapterName.Substring(0, $adapterColumnWidth - 3) + "..." 
-        } else { 
-            $r.AdapterName 
+        
+        # ЗАГОЛОВКИ ТАБЛИЦЫ
+        $headerLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
+            "IP Address", "Interface", "Adapter", "Speed")
+        $separatorLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
+            ("-" * $ipColumnWidth), 
+            ("-" * $interfaceColumnWidth),
+            ("-" * $adapterColumnWidth),
+            ("-" * $speedColumnWidth))
+        
+        $textLines += $headerLine
+        $textLines += $separatorLine
+        
+        # ДАННЫЕ АДАПТЕРОВ
+        foreach ($r in $results) {
+            # Обрезаем длинные названия адаптеров
+            $adapterNameShort = if ($r.AdapterName.Length -gt ($adapterColumnWidth - 2)) { 
+                $r.AdapterName.Substring(0, $adapterColumnWidth - 3) + "..." 
+            } else { 
+                $r.AdapterName 
+            }
+            
+            # Обрезаем длинные названия интерфейсов
+            $interfaceNameShort = if ($r.InterfaceName.Length -gt ($interfaceColumnWidth - 2)) { 
+                $r.InterfaceName.Substring(0, $interfaceColumnWidth - 3) + "..." 
+            } else { 
+                $r.InterfaceName 
+            }
+            
+            # ВЫРАВНИВАЕМ КАЖДУЮ КОЛОНКУ
+            $dataLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
+                $r.IPAddress, 
+                $interfaceNameShort,
+                $adapterNameShort,
+                $r.Speed)
+            
+            $textLines += $dataLine
         }
-        
-        $interfaceNameShort = if ($r.InterfaceName.Length -gt ($interfaceColumnWidth - 2)) { 
-            $r.InterfaceName.Substring(0, $interfaceColumnWidth - 3) + "..." 
-        } else { 
-            $r.InterfaceName 
-        }
-        
-        $dataLine = ("{0,-$ipColumnWidth} {1,-$interfaceColumnWidth} {2,-$adapterColumnWidth} {3,-$speedColumnWidth}" -f 
-            $r.IPAddress, 
-            $interfaceNameShort,
-            $adapterNameShort,
-            $r.Speed)
-        
-        $textLines += $dataLine
     }
 } else {
     $textLines += "No active network adapters found"
@@ -275,21 +317,22 @@ if ($results.Count -gt 0) {
 
 Write-Log "Text lines prepared: $($textLines.Count) lines"
 
-# Рисуем текст с ОПТИМАЛЬНЫМ КАЧЕСТВОМ И ЧЕТКОСТЬЮ
+# --- Рисуем текст с ОПТИМАЛЬНЫМ КАЧЕСТВОМ И ЧЕТКОСТЬЮ ---
 try {
     $gText = [System.Drawing.Graphics]::FromImage($resizedImg)
 
-    # ОПТИМАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ЧЕТКОСТИ
+    # ОПТИМАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ЧЕТКОСТИ И КАЧЕСТВА
     $gText.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $gText.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
 
-    # ОПТИМАЛЬНЫЙ РАЗМЕР ШРИФТА
+    # ОПТИМАЛЬНЫЙ РАЗМЕР ШРИФТА (МЕНЬШЕ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ)
     if ($isSmallResolution) {
         $fontSize = [Math]::Max([int]($screenWidth / 100), 8)
     } else {
         $fontSize = [Math]::Max([int]($screenWidth / 110), 12)
     }
 
+    # ИСПОЛЬЗУЕМ КАЧЕСТВЕННЫЕ ШРИФТЫ
     $font = New-Object System.Drawing.Font("Consolas", $fontSize, [System.Drawing.FontStyle]::Bold)
 
     # Проверяем ширину текста
@@ -330,7 +373,7 @@ try {
         $yStart = $topMargin
     }
 
-    # РИСУЕМ ТЕКСТ
+    # РИСУЕМ ТЕКСТ С ОПТИМАЛЬНЫМ КАЧЕСТВОМ
     foreach ($line in $textLines) {
         $posX = [float]$x
         $posY = [float]$yStart
@@ -349,10 +392,9 @@ try {
     # Сохраняем в PNG для максимального качества
     $resizedImg.Save($imageDest, [System.Drawing.Imaging.ImageFormat]::Png)
     
-    # Проверяем что файл создан
     if (Test-Path $imageDest) {
         $fileSize = (Get-Item $imageDest).Length
-        Write-Log "SUCCESS: Image saved to $imageDest, size: $fileSize bytes"
+        Write-Log "SUCCESS: Image saved - Resolution: ${screenWidth}x${screenHeight}, Font: Consolas Bold ${fontSize}pt, Small resolution: $isSmallResolution, Left margin: ${leftMargin}px, Size: $fileSize bytes"
     } else {
         Write-Log "ERROR: Image file was not created!"
     }
