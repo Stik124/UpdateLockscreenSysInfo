@@ -339,3 +339,18 @@ try {
     Write-Log "StackTrace: $($_.Exception.StackTrace)"
     exit 1
 }
+
+    # Save image
+    $resizedImg.Save($imageDest, [System.Drawing.Imaging.ImageFormat]::Png)
+    Write-Log "Image saved: $imageDest"
+    
+    # Verify file was created
+    if (Test-Path $imageDest) {
+        $fileSize = (Get-Item $imageDest).Length
+        Write-Log "SUCCESS: File created, size: $fileSize bytes"
+    } else {
+        Write-Log "ERROR: File was NOT created!"
+    }
+
+    # Cleanup resources
+    $gText.Dispose()
