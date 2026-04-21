@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <Product Id="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D"
+    <Product Id="*"
              Name="UpdateLockScreen"
              Language="1033"
              Version="VERSION_PLACEHOLDER"
              Manufacturer="Avdeev D.V."
-             UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D"
-             Codepage="1251">
+             UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
 
-        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" 
+                 Description="UpdateLockScreen Installer" />
 
         <MajorUpgrade
             DowngradeErrorMessage="Новая версия UpdateLockScreen уже установлена. Установка старой версии невозможна."
@@ -25,7 +25,8 @@
             <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLFOLDER" Name="UpdateLockScreen">
                     <Component Id="MainFiles" Guid="D4E5F6A7-B8C9-4D3E-8F1A-2B3C4D5E6F79" Win64="yes">
-                        <File Source="files\install-script.ps1" />
+                        <File Source="files\install-task.ps1" />
+                        <File Source="files\run-first-update.ps1" />
                         <File Source="files\uninstall-script.ps1" />
                         <File Source="files\background.jpg" />
                     </Component>
@@ -40,11 +41,18 @@
             Return="ignore"
             Impersonate="no" />
 
-        <CustomAction Id="RunInstallScript"
+        <CustomAction Id="RunInstallTask"
             Directory="INSTALLFOLDER"
-            ExeCommand="cmd.exe /c start /min powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-script.ps1&quot;"
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-task.ps1&quot;"
             Execute="deferred"
-            Return="ignore"
+            Return="check"
+            Impersonate="no" />
+
+        <CustomAction Id="RunFirstUpdate"
+            Directory="INSTALLFOLDER"
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;run-first-update.ps1&quot;"
+            Execute="deferred"
+            Return="asyncNoWait"
             Impersonate="no" />
 
         <CustomAction Id="RunUninstallScript"
@@ -59,7 +67,11 @@
                 Installed OR UPGRADINGPRODUCTCODE
             </Custom>
 
-            <Custom Action="RunInstallScript" After="InstallFiles">
+            <Custom Action="RunInstallTask" After="InstallFiles">
+                NOT Installed OR UPGRADINGPRODUCTCODE
+            </Custom>
+
+            <Custom Action="RunFirstUpdate" After="RunInstallTask">
                 NOT Installed OR UPGRADINGPRODUCTCODE
             </Custom>
 
