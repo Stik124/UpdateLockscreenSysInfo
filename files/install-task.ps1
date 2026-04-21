@@ -1,5 +1,4 @@
 # install-task.ps1
-#
 $basePath = "C:\Program Files\UpdateLockScreen"
 $background = Join-Path $basePath "background.jpg"
 $lockscreenfinal = Join-Path $basePath "LockScreenFinal"
