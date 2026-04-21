@@ -25,7 +25,7 @@ REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /v Loc
 REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /v LockScreenImageUrl /t REG_SZ /d "C:\Program Files\UpdateLockScreen\LockScreenFinal\lockscreen.png" /f | Out-Null
 REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /v LockScreenImageStatus /t REG_DWORD /d 1 /f | Out-Null
 
-# Создаём VBS (УБРАЛИ ГЕНЕРАЦИЮ update-lockscreen.ps1 - он теперь копируется из files/)
+# Создаём VBS
 $vbsContent = @'
 Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run """powershell.exe"" -NoProfile -ExecutionPolicy Bypass -File ""C:\Program Files\UpdateLockScreen\update-lockscreen.ps1""", 0, False
@@ -34,7 +34,6 @@ Set-Content -Path $vbsPath -Value $vbsContent -Encoding ASCII
 
 # Создание задачи планировщика
 $startTime = (Get-Date).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss")
-$currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 $taskXml = @"
 <?xml version="1.0" encoding="UTF-16"?>
@@ -47,7 +46,6 @@ $taskXml = @"
   <Triggers>
     <LogonTrigger>
       <Enabled>true</Enabled>
-      <UserId>$currentUser</UserId>
     </LogonTrigger>
     <TimeTrigger>
       <Repetition>
@@ -60,9 +58,8 @@ $taskXml = @"
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <UserId>$currentUser</UserId>
-      <LogonType>InteractiveToken</LogonType>
-      <RunLevel>HighestAvailable</RunLevel>
+      <GroupId>S-1-5-32-545</GroupId>
+      <RunLevel>LeastPrivilege</RunLevel>
     </Principal>
   </Principals>
   <Settings>
