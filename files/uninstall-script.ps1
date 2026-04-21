@@ -1,10 +1,32 @@
-﻿# uninstall-script.ps1 - Скрипт для удаления
+# uninstall-script.ps1 - Скрипт для удаления
  
-Start-Sleep -Seconds 2   # небольшая пауза
+Start-Sleep -Seconds 2
 
 $taskName = "UpdateLockScreen"
 $basePath = "C:\Program Files\UpdateLockScreen"
 $registryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP"
+
+Write-Host "Остановка всех процессов..." -ForegroundColor Yellow
+try {
+    # Останавливаем задачу если она запущена
+    Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    
+    # Убиваем все процессы PowerShell, которые могут использовать наши файлы
+    Get-Process -Name "powershell" -ErrorAction SilentlyContinue | 
+        Where-Object { $_.Path -like "*UpdateLockScreen*" -or $_.CommandLine -like "*update-lockscreen.ps1*" } | 
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    
+    # Убиваем все процессы WScript
+    Get-Process -Name "wscript" -ErrorAction SilentlyContinue | 
+        Where-Object { $_.CommandLine -like "*UpdateLockScreen*" } | 
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    
+    Write-Host "✅ Процессы остановлены" -ForegroundColor Green
+    Start-Sleep -Seconds 2
+} catch {
+    Write-Host "⚠️ Ошибка при остановке процессов: $($_.Exception.Message)" -ForegroundColor Red
+}
 
 Write-Host "Удаление задачи планировщика..." -ForegroundColor Yellow
 try {
@@ -18,11 +40,13 @@ try {
     Write-Host "⚠️ Не удалось удалить задачу: $($_.Exception.Message)" -ForegroundColor Red
 }
 
+# Ждем чтобы все процессы точно завершились
+Start-Sleep -Seconds 3
+
 Write-Host "Удаление папки программы..." -ForegroundColor Yellow
 try {
     if (Test-Path $basePath) {
-		
-        # Удаляем папку рекурсивно
+        # Сначала пытаемся стандартным способом
         Remove-Item -Path $basePath -Recurse -Force -ErrorAction Stop
         Write-Host "✅ Папка программы удалена: $basePath" -ForegroundColor Green
     } else {
@@ -32,9 +56,13 @@ try {
     Write-Host "⚠️ Не удалось удалить папку: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "⚠️ Попытка принудительного удаления..." -ForegroundColor Yellow
     
+    Start-Sleep -Seconds 2
+    
     # Принудительное удаление через cmd
     try {
         cmd.exe /c "rd /s /q `"$basePath`" 2>nul"
+        Start-Sleep -Seconds 1
+        
         if (-not (Test-Path $basePath)) {
             Write-Host "✅ Папка удалена принудительно" -ForegroundColor Green
         } else {
