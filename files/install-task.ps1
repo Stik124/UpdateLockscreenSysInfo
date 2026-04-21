@@ -255,7 +255,7 @@ $vbsContent = @'
 Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run """powershell.exe"" -NoProfile -ExecutionPolicy Bypass -File ""C:\Program Files\UpdateLockScreen\update-lockscreen.ps1""", 0, False
 '@
-Set-Content -Path $vbsPath -Value $vbsContent -Encoding ASCII
+Set-Content -Path $vbsPath -Value $vbsContent -Encoding UTF8
 
 # Создание задачи планировщика
 $startTime = (Get-Date).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss")
