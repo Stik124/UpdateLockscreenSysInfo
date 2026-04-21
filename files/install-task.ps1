@@ -26,10 +26,13 @@ REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /v Loc
 REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /v LockScreenImageUrl /t REG_SZ /d "C:\Program Files\UpdateLockScreen\LockScreenFinal\lockscreen.png" /f | Out-Null
 REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP /v LockScreenImageStatus /t REG_DWORD /d 1 /f | Out-Null
 
-# Создаём VBS
+# Создаём VBS для ПОЛНОСТЬЮ скрытого запуска
 $vbsContent = @'
-Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run """powershell.exe"" -NoProfile -ExecutionPolicy Bypass -File ""C:\Program Files\UpdateLockScreen\update-lockscreen.ps1""", 0, False
+Dim objShell, strCommand
+Set objShell = CreateObject("WScript.Shell")
+strCommand = "powershell.exe -WindowStyle Hidden -NonInteractive -NoProfile -ExecutionPolicy Bypass -File ""C:\Program Files\UpdateLockScreen\update-lockscreen.ps1"""
+objShell.Run strCommand, 0, False
+Set objShell = Nothing
 '@
 Set-Content -Path $vbsPath -Value $vbsContent -Encoding ASCII
 
