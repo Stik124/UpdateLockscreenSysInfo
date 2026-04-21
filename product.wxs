@@ -35,6 +35,15 @@
         </Directory>
 
         <!-- ==================== CUSTOM ACTIONS ==================== -->
+        
+        <!-- Остановка процессов перед обновлением/удалением -->
+        <CustomAction Id="StopProcesses"
+            Directory="INSTALLFOLDER"
+            ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Get-Process wscript,powershell -ErrorAction SilentlyContinue | Where-Object {$_.Path -like '*UpdateLockScreen*'} | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2"'
+            Execute="immediate"
+            Return="ignore"
+            Impersonate="no" />
+
         <CustomAction Id="RunInstallScript"
             Directory="INSTALLFOLDER"
             ExeCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "install-script.ps1"'
@@ -50,6 +59,11 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
+            <!-- Останавливаем процессы ПЕРЕД началом установки/обновления -->
+            <Custom Action="StopProcesses" Before="InstallValidate">
+                Installed OR UPGRADINGPRODUCTCODE
+            </Custom>
+
             <!-- При установке и обновлении -->
             <Custom Action="RunInstallScript" After="InstallFiles">
                 NOT Installed OR UPGRADINGPRODUCTCODE
