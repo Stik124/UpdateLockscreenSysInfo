@@ -248,7 +248,7 @@ $textBrush.Dispose()
 $shadowBrush.Dispose()
 '@
 
-Set-Content -Path $updateScript -Value $scriptContent -Encoding UTF8
+[System.IO.File]::WriteAllText($updateScript, $scriptContent, [System.Text.UTF8Encoding]::new($false))
 
 # Создаём VBS
 $vbsContent = @'
