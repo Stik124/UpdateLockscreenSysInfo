@@ -42,9 +42,9 @@
 
         <CustomAction Id="RunInstallScript"
             Directory="INSTALLFOLDER"
-            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-script.ps1&quot;"
+            ExeCommand="cmd.exe /c start /min powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-script.ps1&quot;"
             Execute="deferred"
-            Return="check"
+            Return="ignore"
             Impersonate="no" />
 
         <CustomAction Id="RunUninstallScript"
