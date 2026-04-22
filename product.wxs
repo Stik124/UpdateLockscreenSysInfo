@@ -8,18 +8,40 @@
              Manufacturer="Avdeev D.V."
              UpgradeCode="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
 
-        <Package InstallerVersion="200" 
-                 Compressed="yes" 
-                 InstallScope="perMachine" 
+        <Package InstallerVersion="200"
+                 Compressed="yes"
+                 InstallScope="perMachine"
                  Platform="x64"
                  Description="UpdateLockScreen Installer"
                  SummaryCodepage="1251"
                  Languages="1049" />
 
+        <!-- ЭТОТ ЭЛЕМЕНТ ИДЕНТИФИЦИРУЕТ ВСЕ СВЯЗАННЫЕ ПРОДУКТЫ -->
+        <Upgrade Id="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
+            <!-- Обнаружить старые версии для удаления -->
+            <UpgradeVersion OnlyDetect="no"
+                            Property="OLDINSTALLFOUND"
+                            Minimum="0.0.0.0"
+                            IncludeMinimum="yes"
+                            Maximum="VERSION_PLACEHOLDER"
+                            IncludeMaximum="no" />
+            <!-- Обнаружить более новые версии (для предотвращения даунгрейда) -->
+            <UpgradeVersion OnlyDetect="yes"
+                            Property="NEWPRODUCTFOUND"
+                            Minimum="VERSION_PLACEHOLDER"
+                            IncludeMinimum="no" />
+        </Upgrade>
+
+        <!-- Этот Condition блокирует установку, если обнаружена НОВАЯ версия -->
+        <Condition Message="A newer version of UpdateLockScreen is already installed.">
+            <![CDATA[NOT NEWPRODUCTFOUND]]>
+        </Condition>
+
+        <!-- MajorUpgrade управляет планированием RemoveExistingProducts -->
         <MajorUpgrade
             DowngradeErrorMessage="Newer version of UpdateLockScreen is already installed."
             AllowSameVersionUpgrades="yes"
-            Schedule="afterInstallValidate" />
+            Schedule="afterInstallInitialize" />
 
         <MediaTemplate EmbedCab="yes" />
 
@@ -70,16 +92,19 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
+            <!-- Активирует удаление всех старых версий, помеченных Upgrade элементом -->
+            <RemoveExistingProducts Before="InstallInitialize" />
+
             <Custom Action="StopProcesses" Before="InstallValidate">
-                Installed OR UPGRADINGPRODUCTCODE
+                Installed OR UPGRADINGPRODUCTCODE OR OLDINSTALLFOUND
             </Custom>
 
             <Custom Action="RunInstallTask" After="InstallFiles">
-                NOT Installed OR UPGRADINGPRODUCTCODE
+                NOT Installed OR UPGRADINGPRODUCTCODE OR OLDINSTALLFOUND
             </Custom>
 
             <Custom Action="RunFirstUpdate" After="RunInstallTask">
-                NOT Installed OR UPGRADINGPRODUCTCODE
+                NOT Installed OR UPGRADINGPRODUCTCODE OR OLDINSTALLFOUND
             </Custom>
 
             <Custom Action="RunUninstallScript" Before="RemoveFiles">
