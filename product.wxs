@@ -16,9 +16,8 @@
                  SummaryCodepage="1251"
                  Languages="1049" />
 
-        <!-- ЗАМЕНЯЕМ MajorUpgrade на ручной Upgrade -->
         <Upgrade Id="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
-            <!-- Найти все старые версии (ниже текущей) -->
+            <!-- Найти все версии НИЖЕ текущей -->
             <UpgradeVersion 
                 OnlyDetect="no"
                 Property="PREVIOUSVERSIONSINSTALLED"
@@ -27,7 +26,7 @@
                 Maximum="VERSION_PLACEHOLDER"
                 IncludeMaximum="no" />
             
-            <!-- Найти ту же версию (для переустановки) -->
+            <!-- Найти ТУ ЖЕ версию (для переустановки) -->
             <UpgradeVersion 
                 OnlyDetect="no"
                 Property="SELFFOUND"
@@ -36,7 +35,7 @@
                 IncludeMinimum="yes"
                 IncludeMaximum="yes" />
             
-            <!-- Блокировать установку если стоит более новая версия -->
+            <!-- Блокировать если стоит более новая -->
             <UpgradeVersion 
                 OnlyDetect="yes"
                 Property="NEWERVERSIONDETECTED"
@@ -70,10 +69,9 @@
 
         <CustomAction Id="StopProcesses"
             Directory="INSTALLFOLDER"
-            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Get-Process wscript,powershell -ErrorAction SilentlyContinue | Where-Object {$_.Path -like '*UpdateLockScreen*'} | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2&quot;"
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2&quot;"
             Execute="immediate"
-            Return="ignore"
-            Impersonate="no" />
+            Return="ignore" />
 
         <CustomAction Id="RunInstallTask"
             Directory="INSTALLFOLDER"
@@ -97,7 +95,6 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
-            <!-- Удаляем старые версии ПОСЛЕ InstallValidate, но ДО InstallFiles -->
             <RemoveExistingProducts After="InstallValidate" />
 
             <Custom Action="StopProcesses" Before="InstallValidate">
