@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <Product Id="B8C9F4E2-2D94-5B9A-C7D6-AF4E3B2C9E8F"
+    <Product Id="*"
              Name="UpdateLockScreen"
              Language="1049"
              Version="VERSION_PLACEHOLDER"
@@ -11,16 +11,11 @@
         <Package InstallerVersion="200" 
                  Compressed="yes" 
                  InstallScope="perMachine" 
-                 Platform="x64"
-                 Description="UpdateLockScreen Installer"
-                 SummaryCodepage="1251"
-                 Languages="1049"
-                 InstallPrivileges="elevated" />
+                 Platform="x64" />
 
         <MajorUpgrade
-            AllowSameVersionUpgrades="yes"
-            DowngradeErrorMessage="A newer version of UpdateLockScreen is already installed."
-            Schedule="afterInstallExecute" />
+            DowngradeErrorMessage="A newer version is already installed."
+            Schedule="afterInstallInitialize" />
 
         <MediaTemplate EmbedCab="yes" />
 
@@ -31,59 +26,27 @@
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLFOLDER" Name="UpdateLockScreen">
-                    <Component Id="MainFiles" Guid="D4E5F6A7-B8C9-4D3E-8F1A-2B3C4D5E6F79" Win64="yes">
-                        <File Source="files\install-task.ps1" />
-                        <File Source="files\update-lockscreen.ps1" />
-                        <File Source="files\run-first-update.ps1" />
-                        <File Source="files\uninstall-script.ps1" />
-                        <File Source="files\background.jpg" />
+                    <Component Id="MainFiles" Guid="*" Win64="yes">
+                        <File Id="InstallTaskPS1" Source="files\install-task.ps1" KeyPath="yes" />
+                        <File Id="UpdateLockscreenPS1" Source="files\update-lockscreen.ps1" />
+                        <File Id="RunFirstUpdatePS1" Source="files\run-first-update.ps1" />
+                        <File Id="UninstallScriptPS1" Source="files\uninstall-script.ps1" />
+                        <File Id="BackgroundJPG" Source="files\background.jpg" />
                     </Component>
                 </Directory>
             </Directory>
         </Directory>
 
-        <CustomAction Id="StopProcesses"
-            Directory="INSTALLFOLDER"
-            ExeCommand="cmd.exe /c taskkill /F /IM wscript.exe /FI &quot;WINDOWTITLE eq *UpdateLockScreen*&quot; 2&gt;nul &amp; schtasks /End /TN UpdateLockScreen 2&gt;nul"
-            Execute="immediate"
-            Return="ignore" />
-
         <CustomAction Id="RunInstallTask"
             Directory="INSTALLFOLDER"
-            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;install-task.ps1&quot;"
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;install-task.ps1&quot;"
             Execute="deferred"
             Return="check"
             Impersonate="no" />
 
-        <CustomAction Id="RunFirstUpdate"
-            Directory="INSTALLFOLDER"
-            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;run-first-update.ps1&quot;"
-            Execute="deferred"
-            Return="asyncNoWait"
-            Impersonate="no" />
-
-        <CustomAction Id="RunUninstallScript"
-            Directory="INSTALLFOLDER"
-            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File &quot;uninstall-script.ps1&quot;"
-            Execute="deferred"
-            Return="ignore"
-            Impersonate="no" />
-
         <InstallExecuteSequence>
-            <Custom Action="StopProcesses" Before="InstallValidate">
-                Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
-            </Custom>
-
             <Custom Action="RunInstallTask" After="InstallFiles">
-                NOT Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
-            </Custom>
-
-            <Custom Action="RunFirstUpdate" After="RunInstallTask">
-                NOT Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
-            </Custom>
-
-            <Custom Action="RunUninstallScript" Before="RemoveFiles">
-                REMOVE="ALL"
+                NOT Installed
             </Custom>
         </InstallExecuteSequence>
 
