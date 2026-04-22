@@ -64,7 +64,7 @@ $taskXml = @"
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <UserId>S-1-5-18</UserId>
+      <GroupId>S-1-5-32-545</GroupId>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
