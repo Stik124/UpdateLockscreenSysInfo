@@ -19,7 +19,7 @@
         <MajorUpgrade
             DowngradeErrorMessage="Newer version of UpdateLockScreen is already installed."
             AllowSameVersionUpgrades="yes"
-            Schedule="afterInstallInitialize" />
+            Schedule="afterInstallValidate" />
 
         <MediaTemplate EmbedCab="yes" />
 
