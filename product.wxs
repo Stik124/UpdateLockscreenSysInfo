@@ -14,38 +14,13 @@
                  Platform="x64"
                  Description="UpdateLockScreen Installer"
                  SummaryCodepage="1251"
-                 Languages="1049" />
+                 Languages="1049"
+                 InstallPrivileges="elevated" />
 
-        <Upgrade Id="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
-            <!-- Найти все версии НИЖЕ текущей -->
-            <UpgradeVersion 
-                OnlyDetect="no"
-                Property="PREVIOUSVERSIONSINSTALLED"
-                Minimum="1.0.0.0"
-                IncludeMinimum="yes"
-                Maximum="VERSION_PLACEHOLDER"
-                IncludeMaximum="no" />
-            
-            <!-- Найти ТУ ЖЕ версию (для переустановки) -->
-            <UpgradeVersion 
-                OnlyDetect="no"
-                Property="SELFFOUND"
-                Minimum="VERSION_PLACEHOLDER"
-                Maximum="VERSION_PLACEHOLDER"
-                IncludeMinimum="yes"
-                IncludeMaximum="yes" />
-            
-            <!-- Блокировать если стоит более новая -->
-            <UpgradeVersion 
-                OnlyDetect="yes"
-                Property="NEWERVERSIONDETECTED"
-                Minimum="VERSION_PLACEHOLDER"
-                IncludeMinimum="no" />
-        </Upgrade>
-
-        <Condition Message="A newer version of UpdateLockScreen is already installed. Setup will now exit.">
-            NOT NEWERVERSIONDETECTED
-        </Condition>
+        <MajorUpgrade
+            AllowSameVersionUpgrades="yes"
+            DowngradeErrorMessage="A newer version of UpdateLockScreen is already installed."
+            Schedule="afterInstallExecute" />
 
         <MediaTemplate EmbedCab="yes" />
 
@@ -69,7 +44,7 @@
 
         <CustomAction Id="StopProcesses"
             Directory="INSTALLFOLDER"
-            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2&quot;"
+            ExeCommand="cmd.exe /c taskkill /F /IM wscript.exe /FI &quot;WINDOWTITLE eq *UpdateLockScreen*&quot; 2&gt;nul &amp; schtasks /End /TN UpdateLockScreen 2&gt;nul"
             Execute="immediate"
             Return="ignore" />
 
@@ -95,18 +70,16 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
-            <RemoveExistingProducts After="InstallValidate" />
-
             <Custom Action="StopProcesses" Before="InstallValidate">
-                Installed OR PREVIOUSVERSIONSINSTALLED OR SELFFOUND
+                Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
             </Custom>
 
             <Custom Action="RunInstallTask" After="InstallFiles">
-                NOT Installed OR PREVIOUSVERSIONSINSTALLED OR SELFFOUND
+                NOT Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
             </Custom>
 
             <Custom Action="RunFirstUpdate" After="RunInstallTask">
-                NOT Installed OR PREVIOUSVERSIONSINSTALLED OR SELFFOUND
+                NOT Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
             </Custom>
 
             <Custom Action="RunUninstallScript" Before="RemoveFiles">
