@@ -37,6 +37,12 @@
             </Directory>
         </Directory>
 
+        <CustomAction Id="StopAndCleanup"
+            Directory="INSTALLFOLDER"
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Stop-ScheduledTask -TaskName UpdateLockScreen -ErrorAction SilentlyContinue; Unregister-ScheduledTask -TaskName UpdateLockScreen -Confirm:$false -ErrorAction SilentlyContinue&quot;"
+            Execute="immediate"
+            Return="ignore" />
+
         <CustomAction Id="RunInstallTask"
             Directory="INSTALLFOLDER"
             ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;install-task.ps1&quot;"
@@ -44,9 +50,27 @@
             Return="check"
             Impersonate="no" />
 
+        <CustomAction Id="RunUninstallScript"
+            Directory="INSTALLFOLDER"
+            ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;uninstall-script.ps1&quot;"
+            Execute="deferred"
+            Return="ignore"
+            Impersonate="no" />
+
         <InstallExecuteSequence>
+            <!-- Останавливаем задачу и процессы ПЕРЕД удалением старой версии -->
+            <Custom Action="StopAndCleanup" After="FindRelatedProducts">
+                UPGRADINGPRODUCTCODE
+            </Custom>
+
+            <!-- Устанавливаем новую версию -->
             <Custom Action="RunInstallTask" After="InstallFiles">
                 NOT Installed
+            </Custom>
+
+            <!-- Запускаем uninstall при полном удалении -->
+            <Custom Action="RunUninstallScript" Before="RemoveFiles">
+                REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE
             </Custom>
         </InstallExecuteSequence>
 
