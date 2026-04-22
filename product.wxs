@@ -16,10 +16,37 @@
                  SummaryCodepage="1251"
                  Languages="1049" />
 
-        <MajorUpgrade
-            DowngradeErrorMessage="Newer version of UpdateLockScreen is already installed."
-            AllowSameVersionUpgrades="yes"
-            Schedule="afterInstallValidate" />
+        <!-- ЗАМЕНЯЕМ MajorUpgrade на ручной Upgrade -->
+        <Upgrade Id="A7D8F4E2-1C83-4A89-B6C5-9E3F2A1B8C7D">
+            <!-- Найти все старые версии (ниже текущей) -->
+            <UpgradeVersion 
+                OnlyDetect="no"
+                Property="PREVIOUSVERSIONSINSTALLED"
+                Minimum="1.0.0.0"
+                IncludeMinimum="yes"
+                Maximum="VERSION_PLACEHOLDER"
+                IncludeMaximum="no" />
+            
+            <!-- Найти ту же версию (для переустановки) -->
+            <UpgradeVersion 
+                OnlyDetect="no"
+                Property="SELFFOUND"
+                Minimum="VERSION_PLACEHOLDER"
+                Maximum="VERSION_PLACEHOLDER"
+                IncludeMinimum="yes"
+                IncludeMaximum="yes" />
+            
+            <!-- Блокировать установку если стоит более новая версия -->
+            <UpgradeVersion 
+                OnlyDetect="yes"
+                Property="NEWERVERSIONDETECTED"
+                Minimum="VERSION_PLACEHOLDER"
+                IncludeMinimum="no" />
+        </Upgrade>
+
+        <Condition Message="A newer version of UpdateLockScreen is already installed. Setup will now exit.">
+            NOT NEWERVERSIONDETECTED
+        </Condition>
 
         <MediaTemplate EmbedCab="yes" />
 
@@ -70,16 +97,19 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
+            <!-- Удаляем старые версии ПОСЛЕ InstallValidate, но ДО InstallFiles -->
+            <RemoveExistingProducts After="InstallValidate" />
+
             <Custom Action="StopProcesses" Before="InstallValidate">
-                Installed OR UPGRADINGPRODUCTCODE
+                Installed OR PREVIOUSVERSIONSINSTALLED OR SELFFOUND
             </Custom>
 
             <Custom Action="RunInstallTask" After="InstallFiles">
-                NOT Installed OR UPGRADINGPRODUCTCODE
+                NOT Installed OR PREVIOUSVERSIONSINSTALLED OR SELFFOUND
             </Custom>
 
             <Custom Action="RunFirstUpdate" After="RunInstallTask">
-                NOT Installed OR UPGRADINGPRODUCTCODE
+                NOT Installed OR PREVIOUSVERSIONSINSTALLED OR SELFFOUND
             </Custom>
 
             <Custom Action="RunUninstallScript" Before="RemoveFiles">
