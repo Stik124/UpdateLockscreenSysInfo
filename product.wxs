@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <Product Id="B8C9F4E2-2D94-5B9A-C7D6-AF4G3B2C9E8F"
+    <Product Id="B8C9F4E2-2D94-5B9A-C7D6-AF4E3B2C9E8F"
              Name="UpdateLockScreen"
              Language="1049"
              Version="VERSION_PLACEHOLDER"
