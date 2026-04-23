@@ -15,7 +15,7 @@
 
         <MajorUpgrade AllowSameVersionUpgrades="yes"
             DowngradeErrorMessage="A newer version is already installed."
-            Schedule="afterInstallExecute" />
+            Schedule="afterInstallValidate" />
 
         <MediaTemplate EmbedCab="yes" />
 
@@ -58,14 +58,14 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
-            <!-- Останавливаем задачу и процессы ПЕРЕД удалением старой версии -->
+            <!-- Останавливаем задачу только ПРИ ОБНОВЛЕНИИ -->
             <Custom Action="StopAndCleanup" After="FindRelatedProducts">
-                Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
+                UPGRADINGPRODUCTCODE
             </Custom>
 
-            <!-- Устанавливаем новую версию -->
+            <!-- Устанавливаем новую версию (только при первой установке) -->
             <Custom Action="RunInstallTask" After="InstallFiles">
-                NOT Installed OR REINSTALL OR UPGRADINGPRODUCTCODE
+                NOT Installed
             </Custom>
 
             <!-- Запускаем uninstall при полном удалении -->
