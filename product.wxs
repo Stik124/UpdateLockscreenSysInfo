@@ -15,7 +15,7 @@
 
         <MajorUpgrade AllowSameVersionUpgrades="yes"
             DowngradeErrorMessage="A newer version is already installed."
-            Schedule="afterInstallValidate" />
+            Schedule="afterInstallInitialize" />
 
         <MediaTemplate EmbedCab="yes" />
 
