@@ -58,8 +58,8 @@
             Impersonate="no" />
 
         <InstallExecuteSequence>
-            <!-- Останавливаем задачу только ПРИ ОБНОВЛЕНИИ -->
-            <Custom Action="StopAndCleanup" After="FindRelatedProducts">
+            <!-- Останавливаем задачу только ПРИ ОБНОВЛЕНИИ (после InstallInitialize!) -->
+            <Custom Action="StopAndCleanup" After="InstallInitialize">
                 UPGRADINGPRODUCTCODE
             </Custom>
 
